@@ -325,9 +325,19 @@ public class BookStoreTest {
 			bookCopies.add(bookCopy);
 		}
 		storeManager.addCopies(bookCopies);
+		
+		HashSet<StockBook> stockBooks = new HashSet<StockBook>();
+		stockBooks.addAll(stockBooksPre);
+		bookCopies = new HashSet<BookCopy>();
+		for (StockBook stockBook : stockBooksPre) {
+			int isbn = stockBook.getISBN();
+			BookCopy bookCopy = new BookCopy(isbn, 1);
+			bookCopies.add(bookCopy);
+		}
+		new Thread(new AC1Runnable(client, operations, bookCopies)).start();
+		new Thread(new AC2Runnable(storeManager, operations, bookCopies)).start();
+
 		List<StockBook> stockBooksPost = storeManager.getBooks();
-		new Thread(new AC1Runnable(client, operations)).start();
-		new Thread(new AC2Runnable(storeManager, operations)).start();
 		assertEquals(stockBooksPost.size(), stockBooksPre.size());
 		for (int i = 0; i < stockBooksPre.size(); i++) {
 			StockBook stockBookPre = stockBooksPre.get(i);
@@ -349,14 +359,24 @@ public class BookStoreTest {
 			bookCopies.add(bookCopy);
 		}
 		storeManager.addCopies(bookCopies);
-		new Thread(new CC1Runnable()).start();
-		new Thread(new CC1Runnable()).start();
+		
+		bookCopies = new HashSet<BookCopy>();
+		for (StockBook stockBook : stockBooksPre) {
+			int isbn = stockBook.getISBN();
+			BookCopy bookCopy = new BookCopy(isbn, 1);
+			bookCopies.add(bookCopy);
+		}
+		new Thread(new CC1Runnable(client, storeManager, bookCopies)).start();
+		CC2Runnable cc2Runnable = new CC2Runnable(storeManager, operations, stockBooksPre);
+		new Thread(cc2Runnable).start();
 	}
 	
 	/*
+	 * write-write failure
 	public void testIsolation() {
 		
 	}
+	
 	
 	public void testDurability() {
 		

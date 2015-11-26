@@ -9,7 +9,7 @@ import com.acertainbookstore.business.BookCopy;
 
 
 /*
- * Atoimiticy client 1 runnable 
+ * Atomiticy client 1 runnable 
  * Buy books runnable
  */
 public class AC1Runnable implements Runnable {
