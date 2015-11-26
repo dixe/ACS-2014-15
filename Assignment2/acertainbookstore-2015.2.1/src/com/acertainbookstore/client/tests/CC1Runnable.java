@@ -33,8 +33,7 @@ public class CC1Runnable implements Runnable {
 				stockStore.addCopies(booksToBuy);
 				bookStore.buyBooks(booksToBuy);
 			} catch (BookStoreException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+
 			}
 		}
 		
