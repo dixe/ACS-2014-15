@@ -19,10 +19,10 @@ public class AC2Runnable implements Runnable {
 	
 	private StockManager store;
 	int buyTimes = 0;
-	Set<StockBook> bookSet;
+	Set<BookCopy> bookSet;
 	
 	
-	public AC2Runnable(StockManager store, int buyTimes, Set<StockBook> bookSet)
+	public AC2Runnable(StockManager store, int buyTimes, Set<BookCopy> bookSet)
 	{
 		this.store = store;
 		this.buyTimes = buyTimes;
@@ -36,7 +36,7 @@ public class AC2Runnable implements Runnable {
 		{
 			
 			try {
-				store.addBooks(bookSet);
+				store.addCopies(bookSet);
 			} catch (BookStoreException e) {
 				
 			}
