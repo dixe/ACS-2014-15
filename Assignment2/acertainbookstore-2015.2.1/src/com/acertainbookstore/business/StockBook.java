@@ -49,5 +49,5 @@ public interface StockBook extends Book {
 	 * @return
 	 */
 	public boolean isEditorPick();
-	
+		
 }

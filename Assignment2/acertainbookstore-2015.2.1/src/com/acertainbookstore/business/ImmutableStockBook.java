@@ -62,5 +62,5 @@ public final class ImmutableStockBook extends ImmutableBook implements
 	public boolean isEditorPick() {
 		return editorPick;
 	}
-
+		
 }

@@ -314,6 +314,55 @@ public class BookStoreTest {
 
 	}
 
+	@Test
+	public void testAtomicity() throws BookStoreException {
+		int operations = 100;
+		List<StockBook> stockBooksPre = storeManager.getBooks();
+		HashSet<BookCopy> bookCopies = new HashSet<BookCopy>();
+		for (StockBook stockBook : stockBooksPre) {
+			int isbn = stockBook.getISBN();
+			BookCopy bookCopy = new BookCopy(isbn, operations);
+			bookCopies.add(bookCopy);
+		}
+		storeManager.addCopies(bookCopies);
+		List<StockBook> stockBooksPost = storeManager.getBooks();
+		new Thread(new AC1Runnable(client, operations)).start();
+		new Thread(new AC2Runnable(storeManager, operations)).start();
+		assertEquals(stockBooksPost.size(), stockBooksPre.size());
+		for (int i = 0; i < stockBooksPre.size(); i++) {
+			StockBook stockBookPre = stockBooksPre.get(i);
+			StockBook stockBookPost = stockBooksPost.get(i);
+			int copiesPre = stockBookPre.getNumCopies();
+			int copiesPost = stockBookPost.getNumCopies();
+			assertEquals(copiesPre, copiesPost);
+		}
+	}
+	
+	@Test
+	public void testConsistency() {
+		int operations = 100;
+		List<StockBook> stockBooksPre = storeManager.getBooks();
+		HashSet<BookCopy> bookCopies = new HashSet<BookCopy>();
+		for (StockBook stockBook : stockBooksPre) {
+			int isbn = stockBook.getISBN();
+			BookCopy bookCopy = new BookCopy(isbn, operations);
+			bookCopies.add(bookCopy);
+		}
+		storeManager.addCopies(bookCopies);
+		new Thread(new CC1Runnable()).start();
+		new Thread(new CC1Runnable()).start();
+	}
+	
+	/*
+	public void testIsolation() {
+		
+	}
+	
+	public void testDurability() {
+		
+	}
+	*/
+	
 	@AfterClass
 	public static void tearDownAfterClass() throws BookStoreException {
 		storeManager.removeAllBooks();
