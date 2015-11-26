@@ -1,5 +1,13 @@
 package com.acertainbookstore.client.tests;
 
+import java.util.Set;
+
+import com.acertainbookstore.business.BookCopy;
+import com.acertainbookstore.business.StockBook;
+import com.acertainbookstore.interfaces.BookStore;
+import com.acertainbookstore.interfaces.StockManager;
+import com.acertainbookstore.utils.BookStoreException;
+
 
 
 /*
@@ -8,10 +16,31 @@ package com.acertainbookstore.client.tests;
  */
 public class AC2Runnable implements Runnable {
 
+	
+	private StockManager store;
+	int buyTimes = 0;
+	Set<StockBook> bookSet;
+	
+	
+	public AC2Runnable(StockManager store, int buyTimes, Set<StockBook> bookSet)
+	{
+		this.store = store;
+		this.buyTimes = buyTimes;
+		this.bookSet = bookSet;
+	}
+	
 	@Override
 	public void run() {
-		// TODO Auto-generated method stub
-		
+
+		for(int i = 0; i < buyTimes; i++)
+		{
+			
+			try {
+				store.addBooks(bookSet);
+			} catch (BookStoreException e) {
+				
+			}
+		}
 	}
 
 }
