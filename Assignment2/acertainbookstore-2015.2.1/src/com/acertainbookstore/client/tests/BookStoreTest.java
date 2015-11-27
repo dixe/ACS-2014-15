@@ -314,8 +314,13 @@ public class BookStoreTest {
 
 	}
 
+	/**
+	 * Tests that operations are atomic
+	 * @throws InterruptedException
+	 * @throws BookStoreException
+	 */
 	@Test
-	public void testAtomicity() throws BookStoreException {
+	public void testAtomicity() throws BookStoreException, InterruptedException {
 		int operations = 100;
 		List<StockBook> stockBooksPre = storeManager.getBooks();
 		HashSet<BookCopy> bookCopies = new HashSet<BookCopy>();
@@ -325,7 +330,6 @@ public class BookStoreTest {
 			bookCopies.add(bookCopy);
 		}
 		storeManager.addCopies(bookCopies);
-		
 		HashSet<StockBook> stockBooks = new HashSet<StockBook>();
 		stockBooks.addAll(stockBooksPre);
 		bookCopies = new HashSet<BookCopy>();
@@ -334,9 +338,12 @@ public class BookStoreTest {
 			BookCopy bookCopy = new BookCopy(isbn, 1);
 			bookCopies.add(bookCopy);
 		}
-		new Thread(new AC1Runnable(client, operations, bookCopies)).start();
-		new Thread(new AC2Runnable(storeManager, operations, bookCopies)).start();
-
+		Thread T1 = new Thread(new AC1Runnable(client, operations, bookCopies));
+		Thread T2 = new Thread(new AC2Runnable(storeManager, operations, bookCopies));
+		T1.start();
+		T2.start();
+		T1.join();
+		T2.join();
 		List<StockBook> stockBooksPost = storeManager.getBooks();
 		assertEquals(stockBooksPost.size(), stockBooksPre.size());
 		for (int i = 0; i < stockBooksPre.size(); i++) {
@@ -348,40 +355,126 @@ public class BookStoreTest {
 		}
 	}
 	
+	/**
+	 * Tests that snapshots are consistent
+	 * @throws InterruptedException
+	 * @throws BookStoreException
+	 */
 	@Test
-	public void testConsistency() {
+	public void testConsistency() throws BookStoreException, InterruptedException {
 		int operations = 100;
-		List<StockBook> stockBooksPre = storeManager.getBooks();
+		List<StockBook> stockBooks = storeManager.getBooks();
 		HashSet<BookCopy> bookCopies = new HashSet<BookCopy>();
-		for (StockBook stockBook : stockBooksPre) {
+		for (StockBook stockBook : stockBooks) {
 			int isbn = stockBook.getISBN();
 			BookCopy bookCopy = new BookCopy(isbn, operations);
 			bookCopies.add(bookCopy);
 		}
 		storeManager.addCopies(bookCopies);
-		
 		bookCopies = new HashSet<BookCopy>();
-		for (StockBook stockBook : stockBooksPre) {
+		for (StockBook stockBook : stockBooks) {
 			int isbn = stockBook.getISBN();
 			BookCopy bookCopy = new BookCopy(isbn, 1);
 			bookCopies.add(bookCopy);
 		}
-		new Thread(new CC1Runnable(client, storeManager, bookCopies)).start();
-		CC2Runnable cc2Runnable = new CC2Runnable(storeManager, operations, stockBooksPre);
-		new Thread(cc2Runnable).start();
+		CC1Runnable cc1Runnable = new CC1Runnable(client, storeManager, operations, bookCopies);
+		CC2Runnable cc2Runnable = new CC2Runnable(storeManager, operations, 1, stockBooks);
+		Thread T1 = new Thread(cc1Runnable);
+		Thread T2 = new Thread(cc2Runnable);
+		T1.start();
+		T2.start();
+		T1.join();
+		T2.join();
+		assertTrue(cc2Runnable.success);
 	}
 	
-	/*
-	 * write-write failure
-	public void testIsolation() {
+	
+	/**
+	 * Tests that operations are isolated
+	 * @throws InterruptedException
+	 * @throws BookStoreException
+	 */
+	@Test
+	public void testIsolation() throws InterruptedException, BookStoreException {
+		int operations = 100;
+		List<StockBook> stockBooks = storeManager.getBooks();
+		HashSet<BookCopy> bookCopies = new HashSet<BookCopy>();
+		int isbn = 0;
+		for (StockBook stockBook : stockBooks) {
+			isbn = stockBook.getISBN();
+			BookCopy bookCopy = new BookCopy(isbn, operations);
+			bookCopies.add(bookCopy);
+		}
+		storeManager.addCopies(bookCopies);
+		addBooks(1, operations);
+		List<StockBook> booksPre = storeManager.getBooks();
 		
-	}
-	
-	
-	public void testDurability() {
+		BookCopy bookCopy1 = new BookCopy(isbn, 1);
+		BookCopy bookCopy2 = new BookCopy(1, 1);
+		HashSet<BookCopy> booksToBuyC1 = new HashSet<BookCopy>();
+		HashSet<BookCopy> bookCopiesC1 = new HashSet<BookCopy>();
+		HashSet<BookCopy> booksToBuyC2 = new HashSet<BookCopy>();
+		HashSet<BookCopy> bookCopiesC2 = new HashSet<BookCopy>();
+		booksToBuyC1.add(bookCopy1);
+		bookCopiesC1.add(bookCopy2);
+		booksToBuyC2.add(bookCopy2);
+		bookCopiesC2.add(bookCopy1);
 		
+		Thread T1 = new Thread(new ICRunnable(client, storeManager, operations, booksToBuyC1, bookCopiesC1));
+		Thread T2 = new Thread(new ICRunnable(client, storeManager, operations, booksToBuyC2, bookCopiesC2));
+		T1.start();
+		T2.start();
+		T1.join();
+		T2.join();
+		
+		List<StockBook> booksPost = storeManager.getBooks();
+		assertEquals(booksPre.size(), booksPost.size());
+		for (int i = 0; i < booksPre.size(); i++) {
+			StockBook bookPre = booksPre.get(i);
+			StockBook bookPost = booksPost.get(i);
+			int copiesPre = bookPre.getNumCopies();
+			int copiesPost = bookPost.getNumCopies();
+			assertEquals(copiesPre, copiesPost);
+		}
 	}
-	*/
+	
+	
+	/**
+	 * Tests that operations cannot deadlock
+	 * @throws InterruptedException
+	 * @throws BookStoreException
+	 */
+	@Test
+	public void testDeadlock() throws InterruptedException, BookStoreException {
+		int operations = 100;
+		addBooks(1, operations);
+		List<StockBook> stockBooks = storeManager.getBooks();
+		HashSet<BookCopy> bookCopies = new HashSet<BookCopy>();
+		for (StockBook stockBook : stockBooks) {
+			int isbn = stockBook.getISBN();
+			BookCopy bookCopy = new BookCopy(isbn, operations);
+			bookCopies.add(bookCopy);
+		}
+		storeManager.addCopies(bookCopies);
+		BookCopy bookCopy1 = new BookCopy(TEST_ISBN, 1);
+		BookCopy bookCopy2 = new BookCopy(1, 1);
+		HashSet<BookCopy> booksToBuyC1 = new HashSet<BookCopy>();
+		HashSet<BookCopy> bookCopiesC1 = new HashSet<BookCopy>();
+		HashSet<BookCopy> booksToBuyC2 = new HashSet<BookCopy>();
+		HashSet<BookCopy> bookCopiesC2 = new HashSet<BookCopy>();
+		booksToBuyC1.add(bookCopy1);
+		bookCopiesC1.add(bookCopy2);
+		booksToBuyC2.add(bookCopy2);
+		bookCopiesC2.add(bookCopy1);
+		Thread T1 = new Thread(new DLCRunnable(client, storeManager, operations, booksToBuyC1, bookCopiesC1));
+		Thread T2 = new Thread(new DLCRunnable(client, storeManager, operations, booksToBuyC2, bookCopiesC2));
+		T1.start();
+		T2.start();
+		T1.join();
+		T2.join();
+		assertTrue(true);
+	}
+	
 	
 	@AfterClass
 	public static void tearDownAfterClass() throws BookStoreException {
