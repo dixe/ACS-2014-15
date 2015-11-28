@@ -330,6 +330,7 @@ public class BookStoreTest {
 			bookCopies.add(bookCopy);
 		}
 		storeManager.addCopies(bookCopies);
+		stockBooksPre = storeManager.getBooks();
 		HashSet<StockBook> stockBooks = new HashSet<StockBook>();
 		stockBooks.addAll(stockBooksPre);
 		bookCopies = new HashSet<BookCopy>();
