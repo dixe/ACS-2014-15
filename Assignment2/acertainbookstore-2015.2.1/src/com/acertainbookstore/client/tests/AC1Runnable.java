@@ -27,7 +27,6 @@ public class AC1Runnable implements Runnable {
 	
 	@Override
 	public void run() {
-		Set<BookCopy> booksToBuy = new HashSet<>();
 		
 		for(int i = 0; i < buyTimes; i++)
 		{
