@@ -372,6 +372,7 @@ public class BookStoreTest {
 			bookCopies.add(bookCopy);
 		}
 		storeManager.addCopies(bookCopies);
+		stockBooks = storeManager.getBooks();
 		bookCopies = new HashSet<BookCopy>();
 		for (StockBook stockBook : stockBooks) {
 			int isbn = stockBook.getISBN();

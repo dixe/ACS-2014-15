@@ -40,7 +40,7 @@ public class CC2Runnable implements Runnable{
 				
 			} catch (BookStoreException e) {
 				// TODO Auto-generated catch block
-				e.printStackTrace();
+				success = false;
 			}
 			
 		}
